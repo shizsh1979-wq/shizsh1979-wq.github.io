@@ -1,8 +1,8 @@
 const CACHE_NAME = 'mathmasters-v1';
 const urlsToCache = [
-  '/math-masters/',
-  '/math-masters/index.html',
-  '/math-masters/manifest.json'
+  '/',
+  '/index.html',
+  '/manifest.json'
 ];
 
 self.addEventListener('install', event => {
