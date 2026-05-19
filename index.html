@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MathMasters — Математический Турнир (9 жизней)</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://yandex.ru/ads/system/adsdk.js" async></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:system-ui,'Segoe UI','Roboto',sans-serif;background:radial-gradient(circle at 30% 10%,#0a3d2a,#021a0f);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12px;position:relative}
+        .game-card{max-width:650px;width:100%;background:rgba(10,30,20,0.92);backdrop-filter:blur(4px);border-radius:48px;border:2px solid #ffcc66;box-shadow:0 20px 30px rgba(0,0,0,0.6);overflow:hidden;z-index:1}
+        .top-bar{display:flex;justify-content:space-between;align-items:center;background:#1a3a2aee;padding:8px 12px;border-bottom:2px solid #ffaa44;flex-wrap:wrap;gap:6px}
+        .badge{background:#2a4a3a;padding:4px 10px;border-radius:60px;color:#ffdd99;font-weight:bold;font-size:0.7rem;border:1px solid #ffaa44;cursor:pointer}
+        .lives-container{display:flex;align-items:center;gap:4px;background:#2a4a3a;padding:4px 10px;border-radius:60px;border:1px solid #ffaa44}
+        .rank-badge{background:#ffaa4420;color:#ffcc88;border-color:#ffaa44}
+        .difficulty-btn{background:#2a4a3a;border:1px solid #ffaa44;border-radius:30px;padding:4px 12px;color:#ffdd99;font-weight:bold;font-size:0.7rem;cursor:pointer}
+        .difficulty-active{background:#ffaa44;color:#1a3a2a;border-color:white}
+        .game-panel{padding:12px}
+        .quiz-card{background:#0a2a1add;border-radius:40px;padding:16px 12px;text-align:center;border:1px solid #ffaa66;margin-bottom:12px;position:relative;overflow:hidden}
+        .question{font-size:1.8rem;font-weight:800;color:#ffefc0;word-break:break-word;letter-spacing:2px}
+        .answer-zone{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:15px 0 8px}
+        .answer-input{background:#1a3a2a;border:2px solid #ffaa44;color:white;font-size:1.4rem;width:180px;text-align:center;border-radius:60px;padding:10px;outline:none}
+        .answer-input:focus{border-color:#ffcc66;box-shadow:0 0 10px #ffaa44}
+        .submit-btn{background:#ffaa44;width:65%;border:none;color:#1a3a2a;font-weight:bold;font-size:1.1rem;padding:10px;border-radius:100px;margin-top:6px;cursor:pointer}
+        .ad-btn{background:#44aaff;width:80%;border:none;color:white;font-weight:bold;font-size:1.1rem;padding:12px;border-radius:100px;margin:10px auto;cursor:pointer;display:block;text-align:center}
+        .waiting-message{text-align:center;padding:20px;background:#1a3a2a;border-radius:40px;margin:10px;color:#ffdd99}
+        .lb-mini{background:#0a2a1aaa;border-radius:28px;padding:8px;max-height:280px;overflow-y:auto}
+        .lb-row{display:flex;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #ffaa4455;font-size:0.75rem;color:#ffdd99}
+        .lb-player{background:#ffaa4433;border-radius:20px;font-weight:bold}
+        .menu-row{display:flex;gap:8px;padding:10px 12px 16px;flex-wrap:wrap}
+        .menu-btn{flex:1;background:#2a4a3a;border:none;padding:8px;border-radius:40px;color:#ffdd99;font-weight:bold;cursor:pointer;font-size:0.75rem}
+        .profile-screen,.stats-screen,.shop-screen{background:#0a2a1aee;padding:20px;border-radius:32px}
+        .achievement-item,.quest-item{background:#1a3a2a;margin:8px 0;padding:10px;border-radius:20px;display:flex;justify-content:space-between;align-items:center}
+        .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:2000}
+        .modal-content{background:#1a3a2a;border:3px solid #ffaa44;border-radius:48px;padding:20px;text-align:center;width:280px}
+        .modal-content input{background:#2a4a3a;border:2px solid #ffaa44;color:white;font-size:1.2rem;padding:10px;border-radius:40px;width:100%;margin:15px 0;text-align:center}
+        .character-option{display:inline-block;margin:8px;padding:8px 15px;background:#2a4a3a;border-radius:40px;cursor:pointer}
+        button{cursor:pointer}
+        .copyright{position:fixed;bottom:8px;right:12px;font-size:10px;color:#ffaa8888;background:rgba(10,30,20,0.6);padding:4px 10px;border-radius:20px;backdrop-filter:blur(4px);z-index:100;font-family:monospace;pointer-events:none}
+        .copyright a{color:#ffaa8888;text-decoration:none}
+        .notification-toast{position:fixed;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#2a6b4a,#1a4a3a);border:2px solid #ffcc44;border-radius:50px;padding:10px 20px;text-align:center;z-index:1000;box-shadow:0 0 30px rgba(255,200,0,0.4);backdrop-filter:blur(8px);animation:slideIn 0.3s ease-out forwards;white-space:nowrap;font-weight:bold}
+        .notification-toast.top{top:20px;animation:slideDown 0.3s ease-out forwards}
+        .notification-toast.bottom{bottom:20px;animation:slideUp 0.3s ease-out forwards}
+        .notification-toast.center{top:50%;transform:translate(-50%,-50%);animation:popIn 0.3s ease-out forwards;white-space:normal;max-width:280px;text-align:center;padding:15px 25px;font-size:1rem}
+        @keyframes slideDown{0%{opacity:0;transform:translateX(-50%) translateY(-50px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
+        @keyframes slideUp{0%{opacity:0;transform:translateX(-50%) translateY(50px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
+        @keyframes popIn{0%{opacity:0;transform:translate(-50%,-50%) scale(0.5)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+        @keyframes fadeOut{to{opacity:0;visibility:hidden}}
+        /* ПРИНУДИТЕЛЬНОЕ СКРЫТИЕ АДРЕСНОЙ СТРОКИ — ФИНАЛЬНЫЙ ФИКС */
+body {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+.game-card {
+    height: 100%;
+    overflow-y: auto;
+}
+    </style>
+</head>
+<body>
+<div id="appRoot"></div>
+<div class="copyright">© Дмитрий Хайбулин | <a href="mailto:kayfull.in@yandex.ru">kayfull.in@yandex.ru</a></div>
+<script>
+// === ПРИНУДИТЕЛЬНОЕ СКРЫТИЕ АДРЕСНОЙ СТРОКИ ДЛЯ МОДЕРАЦИИ RUSTORE ===
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        window.scrollTo(0, 1);
+    }, 0);
+});
+// ======================= АВТОРСКИЕ ПРАВА =======================
+console.log("%c© MathMasters | Автор: Дмитрий Хайбулин | Контакты: kayfull.in@yandex.ru | Все права защищены", "color:#ffaa44;font-size:14px;font-weight:bold");
+
+// ======================= НАСТРОЙКИ =======================
+let playerNickname = localStorage.getItem('playerNickname') || "Игрок";
+let difficulty = localStorage.getItem('gameDifficulty') || "medium";
+let selectedPet = localStorage.getItem('selectedPet') || "cat";
+let soundEnabled = localStorage.getItem('soundEnabled') !== "false";
+let musicEnabled = localStorage.getItem('musicEnabled') !== "false";
+let musicUnlocked = false;
+let pendingAnswer = false;
+
+const pets = {
+    cat: { name: "Ум-мяу", emoji: "🐱", price: 0 },
+    panda: { name: "Панда", emoji: "🐼", price: 3 },
+    dino: { name: "Динозаврик", emoji: "🦕", price: 5 }
+};
+
+function showNicknameModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `<div class="modal-content"><h3 style="color:#ffdd99">Введите ваш никнейм</h3><input type="text" id="nicknameInput" maxlength="15" placeholder="${playerNickname}" value="${playerNickname}"><button id="saveNicknameBtn" style="background:#ffaa44; color:#1a3a2a; border:none; padding:8px 20px; border-radius:40px; margin-top:10px; font-weight:bold;">Сохранить</button></div>`;
+    document.body.appendChild(modal);
+    const input = modal.querySelector('#nicknameInput');
+    const saveBtn = modal.querySelector('#saveNicknameBtn');
+    saveBtn.onclick = () => {
+        let newName = input.value.trim();
+        if (newName.length > 15) newName = newName.slice(0,15);
+        if (newName === "") newName = "Игрок";
+        playerNickname = newName;
+        localStorage.setItem('playerNickname', playerNickname);
+        modal.remove();
+        showNotification(`Никнейм изменён на ${playerNickname}`, "✏️", "top", 2000);
+        renderFull();
+    };
+    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') saveBtn.click(); });
+    input.focus();
+}
+
+let bgMusic = null;
+function initMusic() { if (bgMusic) return; bgMusic = new Audio(); bgMusic.loop = true; bgMusic.volume = 0.2; bgMusic.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"; }
+function unlockMusic() { if (musicUnlocked) return; musicUnlocked = true; if (bgMusic && musicEnabled) bgMusic.play().catch(e => console.log); }
+function startMusicOnFirstTouch() {
+    document.body.addEventListener('touchstart', function once() { unlockMusic(); document.body.removeEventListener('touchstart', once); });
+    document.body.addEventListener('click', function once() { unlockMusic(); document.body.removeEventListener('click', once); });
+}
+function toggleMusic() {
+    musicEnabled = !musicEnabled;
+    localStorage.setItem('musicEnabled', musicEnabled);
+    if (bgMusic) { if (musicEnabled && musicUnlocked) bgMusic.play().catch(e => {}); else if (!musicEnabled) bgMusic.pause(); }
+    else if (musicEnabled) { initMusic(); if (musicUnlocked) bgMusic.play().catch(e => {}); }
+    showNotification(musicEnabled ? "Музыка включена" : "Музыка выключена", musicEnabled ? "🎵" : "🔇", "top", 1500);
+}
+
+let notificationQueue = [];
+let isShowingNotification = false;
+function showNotification(message, emoji, zone = "top", duration = 2500) {
+    notificationQueue.push({ message, emoji, zone, duration });
+    processNotificationQueue();
+}
+function processNotificationQueue() {
+    if (isShowingNotification || notificationQueue.length === 0) return;
+    isShowingNotification = true;
+    const { message, emoji, zone, duration } = notificationQueue.shift();
+    const toast = document.createElement('div');
+    toast.className = `notification-toast ${zone}`;
+    toast.innerHTML = `<span style="font-size:1.3rem; margin-right:8px">${emoji}</span> ${message}`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = "fadeOut 0.3s ease-out forwards";
+        setTimeout(() => { toast.remove(); isShowingNotification = false; processNotificationQueue(); }, 300);
+    }, duration);
+}
+
+function playYesSound() { if (!soundEnabled) return; const utterance = new SpeechSynthesisUtterance("Yes"); utterance.lang = "en-US"; utterance.rate = 1.2; utterance.volume = 0.8; window.speechSynthesis.cancel(); window.speechSynthesis.speak(utterance); }
+function playOopsSound() { if (!soundEnabled) return; const utterance = new SpeechSynthesisUtterance("Ой"); utterance.lang = "ru-RU"; utterance.rate = 1.1; utterance.volume = 0.8; window.speechSynthesis.cancel(); window.speechSynthesis.speak(utterance); }
+
+const cheerPhrases = ["Давай-давай!", "Ты можешь лучше!", "Ты просто супер!", "Ты математик!", "Ты лучше всех!", "Ты вундеркинд!", "Ты супер мозг!"];
+let cheerIndex = 0, cheerInterval = null;
+function playNextCheer() { if (!soundEnabled) return; const utterance = new SpeechSynthesisUtterance(cheerPhrases[cheerIndex % cheerPhrases.length]); utterance.lang = "ru-RU"; utterance.rate = 0.95; utterance.volume = 0.65; window.speechSynthesis.speak(utterance); cheerIndex++; }
+function startCheerInterval() { if (cheerInterval) clearInterval(cheerInterval); cheerInterval = setInterval(playNextCheer, 20000); }
+function stopCheerInterval() { if (cheerInterval) clearInterval(cheerInterval); }
+
+function playSound(type) {
+    if (!soundEnabled) return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        if (type === "bell") {
+            osc.frequency.value = 1200; gain.gain.value = 0.12; osc.start(); gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35); osc.stop(ctx.currentTime + 0.3);
+            const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain(); osc2.connect(gain2); gain2.connect(ctx.destination); osc2.frequency.value = 1800; gain2.gain.value = 0.06; osc2.start(); gain2.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3); osc2.stop(ctx.currentTime + 0.25);
+        } else if (type === "victory") {
+            [880, 1100, 1320].forEach((freq, i) => { const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value = freq; g.gain.value = 0.1; o.start(ctx.currentTime + i * 0.12); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.12 + 0.35); o.stop(ctx.currentTime + i * 0.12 + 0.35); });
+        } else if (type === "reward") {
+            [660, 880, 1320].forEach((freq, i) => { const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value = freq; g.gain.value = 0.08; o.start(ctx.currentTime + i * 0.1); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.1 + 0.3); o.stop(ctx.currentTime + i * 0.1 + 0.3); });
+        } else if (type === "achievement") {
+            [523, 659, 784].forEach((freq, i) => { const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value = freq; g.gain.value = 0.12; o.start(ctx.currentTime + i * 0.1); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.1 + 0.35); o.stop(ctx.currentTime + i * 0.1 + 0.35); });
+        }
+    } catch(e) {}
+}
+
+// ======================= СИСТЕМА ЖИЗНЕЙ =======================
+let lives = 9;
+let lastLifeUpdate = localStorage.getItem('lastLifeUpdate') || Date.now();
+let nextLifeTime = localStorage.getItem('nextLifeTime') || null;
+
+function updateLivesDisplay() {
+    const livesContainer = document.querySelector('.lives-container');
+    if (livesContainer) {
+        let hearts = '';
+        for (let i = 0; i < lives; i++) hearts += '❤️ ';
+        for (let i = lives; i < 9; i++) hearts += '🖤 ';
+        livesContainer.innerHTML = hearts.trim() || '❤️';
+    }
+    localStorage.setItem('lives', lives);
+    localStorage.setItem('lastLifeUpdate', lastLifeUpdate);
+}
+
+function restoreLivesOverTime() {
+    const now = Date.now();
+    const last = parseInt(localStorage.getItem('lastLifeUpdate')) || now;
+    const storedLives = parseInt(localStorage.getItem('lives'));
+    if (!isNaN(storedLives)) lives = storedLives;
+    if (nextLifeTime && now >= parseInt(nextLifeTime)) {
+        if (lives < 9) {
+            lives = Math.min(9, lives + 1);
+            localStorage.setItem('lives', lives);
+            nextLifeTime = now + 3600000;
+            localStorage.setItem('nextLifeTime', nextLifeTime);
+        } else {
+            nextLifeTime = null;
+            localStorage.setItem('nextLifeTime', null);
+        }
+    }
+    if (lives < 9 && !nextLifeTime) {
+        nextLifeTime = now + 3600000;
+        localStorage.setItem('nextLifeTime', nextLifeTime);
+    }
+    updateLivesDisplay();
+}
+
+function loseLife() {
+    if (lives > 0) {
+        lives--;
+        if (lives === 0) {
+            nextLifeTime = Date.now() + 3600000;
+            localStorage.setItem('nextLifeTime', nextLifeTime);
+            showNotification("❤️ Жизни закончились! Смотри рекламу или жди восстановления", "⚠️", "center", 3000);
+        }
+        localStorage.setItem('lives', lives);
+        updateLivesDisplay();
+        return true;
+    }
+    return false;
+}
+
+function addLives(count) {
+    lives = Math.min(9, lives + count);
+    if (lives < 9) { nextLifeTime = Date.now() + 3600000; localStorage.setItem('nextLifeTime', nextLifeTime); }
+    else { nextLifeTime = null; localStorage.setItem('nextLifeTime', null); }
+    localStorage.setItem('lives', lives);
+    updateLivesDisplay();
+    showNotification(`+${count} жизни! ❤️`, "🎁", "center", 2000);
+    renderFull();
+}
+
+function getTimeToNextLife() { if (!nextLifeTime) return null; const remaining = parseInt(nextLifeTime) - Date.now(); if (remaining <= 0) return 0; return remaining; }
+
+// ======================= РЕКЛАМА =======================
+function showRewardedAd() {
+    if (typeof Ya !== 'undefined' && Ya.showRewardedAd) {
+        Ya.showRewardedAd({
+            blockId: 'R-M-19285274-1',
+            onRewarded: () => {
+                addLives(3);
+                showNotification('🎉 +3 жизни! Спасибо за просмотр!', '🎁', 'center', 2500);
+                renderFull();
+            },
+            onError: (error) => {
+                console.error('Ошибка рекламы:', error);
+                showNotification('❌ Реклама не загрузилась. Попробуйте позже.', '⚠️', 'center', 2000);
+            }
+        });
+    } else {
+        showNotification('⚠️ Реклама временно недоступна', '⚠️', 'center', 2000);
+    }
+}
+
+// ======================= ИГРОВОЕ СОСТОЯНИЕ =======================
+let game = {
+    level: 1, streak: 0, totalScore: 0, elo: 1000, totalCorrect: 0,
+    highestLevel: 1, cups: [], medals: [], mathCorrect: 0,
+    winTop3Count: 0, sessionCounter: 0, currentQ: null,
+    lastAnswerTime: Date.now()
+};
+
+let botsList = [];
+let currentScreen = 'game';
+let botUpdateInterval = null;
+let lifeRestoreInterval = null;
+
+const ALL_BOT_NAMES = [
+    "Артём","Максим","Дмитрий","Кирилл","Никита","Михаил","Александра","Даниил",
+    "Роман","Егор","Иван","Алихан","Эмиль","Рустам","Давид","Алексей","Тимур",
+    "Ильяс","Дамир","Сергей","Антон","Владимир","Олег","София","Виктория",
+    "Анастасия","Елена","Полина","Дарья","Алиса","Вероника","Ксения","Ульяна",
+    "Севинч","Айгерим","Софико","Оксана","Назгуль","Зарина","Лейла","Милена",
+    "Арина","Карина","Мария","Анна","Татьяна","Юлия","Евгения","Амина","Тимофей","Матвей","Лев"
+];
+
+function updateLeaderboardAndStats() {
+    const lbMini = document.querySelector('.lb-mini');
+    if (lbMini) {
+        let botsDisplay = botsList.slice(0,6).map(b => `<div class="lb-row"><span>🐐 ${b.name}</span><span>Ур.${b.level} 🔹 ${Math.floor(b.elo)}</span></div>`).join('');
+        const playerRow = `<div class="lb-row lb-player"><span>🏅 ${playerNickname}</span><span>Ур.${game.level} ▫ ${Math.floor(game.elo)}</span></div>`;
+        lbMini.innerHTML = playerRow + botsDisplay;
+    }
+    updateLivesDisplay();
+    const topBar = document.querySelector('.top-bar');
+    if (topBar) {
+        const levelSpan = topBar.querySelector('div:first-child');
+        const rankSpan = topBar.querySelector('.rank-badge');
+        const eloSpan = topBar.querySelector('div:nth-child(3)');
+        if (levelSpan) levelSpan.innerHTML = `⭐ Ур.${game.level}`;
+        if (rankSpan) rankSpan.innerHTML = getRankTitle(game.level);
+        if (eloSpan) eloSpan.innerHTML = `🏆 ${Math.floor(game.elo)}`;
+    }
+}
+
+function updateQuestionAndField() {
+    const questionDiv = document.querySelector('.question');
+    if (questionDiv) questionDiv.textContent = game.currentQ.text;
+    const inputField = document.getElementById('mathInput');
+    if (inputField) {
+        inputField.value = "";
+        inputField.focus();
+    }
+}
+
+function updateBotsScores() {
+    let changed = false;
+    botsList = botsList.map(b => { let change = Math.floor(Math.random() * 60) - 25; let newElo = Math.max(200, b.elo + change); if (newElo !== b.elo) changed = true; return { ...b, elo: newElo }; });
+    if (changed) {
+        botsList.sort((a,b) => b.elo - a.elo);
+        updateLeaderboardAndStats();
+    }
+}
+
+function refreshBotNames() {
+    const available = [...ALL_BOT_NAMES];
+    botsList.forEach(b => { const i = available.indexOf(b.name); if(i!==-1) available.splice(i,1); });
+    for(let i=0; i<2 && available.length; i++) { const idx = Math.floor(Math.random() * botsList.length); const newIdx = Math.floor(Math.random() * available.length); botsList[idx].name = available[newIdx]; available.splice(newIdx,1); }
+    botsList.sort((a,b) => b.elo - a.elo);
+    updateLeaderboardAndStats();
+}
+
+function initBots() {
+    let shuffled = [...ALL_BOT_NAMES].sort(() => Math.random() - 0.5);
+    let bots = [];
+    for (let i = 0; i < 7; i++) { let lvl = Math.max(1, game.level + Math.floor(Math.random() * 5) - 2); bots.push({ name: shuffled[i], level: lvl, elo: Math.max(300, game.elo + (Math.random() * 100 - 50)), rank: getRankTitle(lvl) }); }
+    return bots.sort((a,b) => b.elo - a.elo);
+}
+
+function getRankTitle(lvl) { if(lvl<=4) return "Новичок 🟢"; if(lvl<=9) return "Ученик 📘"; if(lvl<=19) return "Знаток 🟡"; if(lvl<=34) return "Эрудит 🔵"; if(lvl<=49) return "Мастер 🟣"; if(lvl<=74) return "Профессор 🏅"; if(lvl<=99) return "Гений 🔥"; return "Легенда 👑"; }
+
+let adaptiveMultiplier = 1.0;
+function adjustDifficulty(correct) { if (correct) adaptiveMultiplier = Math.min(2.0, adaptiveMultiplier + 0.1); else adaptiveMultiplier = Math.max(0.5, adaptiveMultiplier - 0.15); }
+
+function generateMathQuestion() {
+    let maxNum = 12 + Math.floor(game.level * 1.2);
+    if (difficulty === "easy") maxNum = Math.min(maxNum, 25);
+    else if (difficulty === "hard") maxNum = Math.min(maxNum * 1.5, 200);
+    maxNum = Math.floor(maxNum * adaptiveMultiplier);
+    maxNum = Math.min(280, maxNum);
+    let useMul = (difficulty !== "easy") && (game.level >= 4);
+    let useDiv = (difficulty === "hard" && game.level >= 6) || (game.level >= 10);
+    let useThree = (difficulty === "hard" && game.level >= 8) || (game.level >= 12);
+    let useNegative = (difficulty === "hard" && game.level >= 15);
+    
+    if (useThree && Math.random() > 0.5) {
+        let ops = ['+', '-']; if(useMul) ops.push('×'); if(useDiv) ops.push('÷');
+        let op1 = ops[Math.floor(Math.random() * ops.length)];
+        let op2 = ops[Math.floor(Math.random() * ops.length)];
+        let a = Math.floor(Math.random() * maxNum/2)+3;
+        let b = Math.floor(Math.random() * maxNum/2)+3;
+        let c = Math.floor(Math.random() * maxNum/2)+3;
+        let answer;
+        if(op1==='+' && op2==='+') answer = a+b+c;
+        else if(op1==='+' && op2==='-') answer = a+b-c;
+        else if(op1==='×' && op2==='+') answer = (a*b)+c;
+        else if(op1==='×' && op2==='-') answer = (a*b)-c;
+        else answer = a+b-c;
+        if(useNegative && Math.random()>0.7) answer = -answer;
+        return { text: `${a} ${op1} ${b} ${op2} ${c}`, answer: answer.toString() };
+    }
+    let ops = ['+', '-']; if(useMul) ops.push('×'); if(useDiv) ops.push('÷');
+    let op = ops[Math.floor(Math.random() * ops.length)];
+    let a = Math.floor(Math.random() * maxNum) + 1;
+    let b = Math.floor(Math.random() * maxNum) + 1;
+    let answer;
+    if(op === '+') answer = a + b;
+    else if(op === '-') { if(a<b) [a,b] = [b,a]; answer = a - b; }
+    else if(op === '×') answer = a * b;
+    else { b = Math.max(2,b); answer = Math.floor(Math.random() * 20) + 1; a = b * answer; }
+    if(useNegative && Math.random()>0.8) answer = -answer;
+    return { text: `${a} ${op} ${b}`, answer: answer.toString() };
+}
+
+function handleAnswer(userAnswer) {
+    if (pendingAnswer) return false;
+    if (lives <= 0) { 
+        showNotification("Нет жизней! Смотри рекламу или жди восстановления", "⚠️", "center", 2000); 
+        return false; 
+    }
+    pendingAnswer = true;
+    
+    let correct = (userAnswer.trim() === game.currentQ?.answer);
+    
+    if (correct) {
+        playYesSound();
+        let timeSpent = (Date.now() - game.lastAnswerTime) / 1000;
+        game.totalCorrect++; game.streak++; game.totalScore += 10; game.mathCorrect++;
+        if(game.streak === 5) playSound("achievement");
+        updateQuest("Решить 20 примеров");
+        if(timeSpent < 3 && !achievements.speed_demon) unlockAchievement("speed_demon");
+        adjustDifficulty(true);
+        
+        if(game.streak >= 10) {
+            game.level++; if(game.level > game.highestLevel) game.highestLevel = game.level;
+            game.streak = 0; game.totalScore += 50;
+            playSound("victory");
+            showNotification(`УРОВЕНЬ ${game.level}! +50 очков`, "🎉", "center", 2500);
+            updateQuest("Повысить уровень 3 раза");
+            if(game.level >= 5 && !achievements.first_steps) unlockAchievement("first_steps");
+            if(game.level >= 30 && !achievements.marathoner) unlockAchievement("marathoner");
+            updateCupsAndMedals();
+        }
+        
+        game.sessionCounter++;
+        if(game.sessionCounter >= 8) {
+            let pos = Math.floor(Math.random() * 3) + 1;
+            let delta = pos===1?25:(pos===2?12:5);
+            game.elo = Math.max(300, game.elo + delta);
+            if(pos===1) game.winTop3Count++;
+            game.sessionCounter = 0;
+            playSound("bell");
+            showNotification(`${pos===1?"🥇":pos===2?"🥈":"🥉"} ${pos} место! +${delta} рейтинга`, "🏆", "center", 2500);
+            updateQuest("Выиграть 2 турнира");
+            if(game.winTop3Count >= 3 && !achievements.invincible) unlockAchievement("invincible");
+            botsList = initBots(); refreshBotNames();
+        }
+        if(game.totalCorrect >= 50 && !achievements.iron_will) unlockAchievement("iron_will");
+        if(game.mathCorrect >= 80 && !achievements.math_sniper) unlockAchievement("math_sniper");
+        game.lastAnswerTime = Date.now();
+        
+        game.currentQ = generateMathQuestion();
+        updateQuestionAndField();
+        updateBotsScores();
+        
+        pendingAnswer = false;
+        return true;
+        
+    } else {
+        playOopsSound();
+        if(difficulty !== "easy") game.totalScore = Math.max(0, game.totalScore - 5);
+        game.streak = 0;
+        adjustDifficulty(false);
+        loseLife();
+        showNotification(`Неправильно! −1 жизнь ❤️ Осталось: ${lives}`, "❌", "bottom", 1500);
+        
+        game.currentQ = generateMathQuestion();
+        updateQuestionAndField();
+        updateBotsScores();
+        
+        pendingAnswer = false;
+        return false;
+    }
+}
+
+// ======================= ДОСТИЖЕНИЯ И КВЕСТЫ =======================
+let achievements = JSON.parse(localStorage.getItem('achievements')) || {
+    first_steps: false, iron_will: false, math_sniper: false, marathoner: false,
+    invincible: false, sprinter: false, universal: false, terminator: false,
+    early_bird: false, duel_master: false, speed_demon: false, perfect_day: false
+};
+const achievementsList = {
+    first_steps: { name: "🏅 Первые шаги", desc: "Достичь 5 уровня" },
+    iron_will: { name: "💪 Стальная воля", desc: "50 правильных ответов" },
+    math_sniper: { name: "🎯 Мат.снайпер", desc: "80 математических ответов" },
+    marathoner: { name: "🏃 Марафонец", desc: "Достичь 30 уровня" },
+    invincible: { name: "👑 Непобедимый", desc: "3 раза занять 1 место" },
+    sprinter: { name: "⚡ Спринтер", desc: "20 ответов за 1 минуту" },
+    universal: { name: "🎓 Универсал", desc: "Победить во всех режимах" },
+    terminator: { name: "🤖 Терминатор", desc: "50 правильных подряд" },
+    early_bird: { name: "🌅 Ранняя пташка", desc: "Играть 7 дней подряд" },
+    duel_master: { name: "⚔️ Дуэлянт", desc: "Выиграть 3 дуэли" },
+    speed_demon: { name: "💨 Скорость", desc: "Решить пример за 3 секунды" },
+    perfect_day: { name: "🌟 Идеальный день", desc: "Выполнить все задания за день" }
+};
+function unlockAchievement(id) { if (!achievements[id]) { achievements[id] = true; localStorage.setItem('achievements', JSON.stringify(achievements)); playSound("achievement"); showNotification(`Достижение: ${achievementsList[id].name}`, "🏆", "center", 3000); updateCupsAndMedals(); } }
+
+let dailyQuests = JSON.parse(localStorage.getItem('dailyQuests')) || {
+    date: new Date().toDateString(), quests: [
+        { text: "Решить 20 примеров", current: 0, target: 20, reward: 100, completed: false },
+        { text: "Повысить уровень 3 раза", current: 0, target: 3, reward: 100, completed: false },
+        { text: "Выиграть 2 турнира", current: 0, target: 2, reward: 100, completed: false }
+    ]
+};
+function checkDailyReset() { const today = new Date().toDateString(); if (dailyQuests.date !== today) { dailyQuests = { date: today, quests: [ { text: "Решить 20 примеров", current: 0, target: 20, reward: 100, completed: false }, { text: "Повысить уровень 3 раза", current: 0, target: 3, reward: 100, completed: false }, { text: "Выиграть 2 турнира", current: 0, target: 2, reward: 100, completed: false } ] }; localStorage.setItem('dailyQuests', JSON.stringify(dailyQuests)); } }
+function updateQuest(questText, increment = 1) { const quest = dailyQuests.quests.find(q => q.text === questText); if (quest && !quest.completed) { quest.current = Math.min(quest.target, quest.current + increment); if (quest.current >= quest.target) { quest.completed = true; game.elo += quest.reward; playSound("reward"); showNotification(`Задание выполнено! +${quest.reward} рейтинга`, "⭐", "bottom", 2500); updateCupsAndMedals(); } localStorage.setItem('dailyQuests', JSON.stringify(dailyQuests)); } }
+
+function updateCupsAndMedals() {
+    let lvl = game.highestLevel;
+    let cups = [...game.cups];
+    if(lvl>=10 && !cups.includes('bronze')) cups.push('bronze');
+    if(lvl>=20 && !cups.includes('silver')) cups.push('silver');
+    if(lvl>=30 && !cups.includes('gold')) cups.push('gold');
+    if(lvl>=40 && !cups.includes('platinum')) cups.push('platinum');
+    if(lvl>=50 && !cups.includes('royal')) cups.push('royal');
+    if(lvl>=60 && !cups.includes('legendary')) cups.push('legendary');
+    game.cups = cups;
+    let medals = [...game.medals];
+    if(game.highestLevel>=5 && !medals.includes('first_steps')) medals.push('first_steps');
+    if(game.totalCorrect>=50 && !medals.includes('iron_will')) medals.push('iron_will');
+    if(game.mathCorrect>=80 && !medals.includes('math_sniper')) medals.push('math_sniper');
+    if(game.highestLevel>=30 && !medals.includes('marathoner')) medals.push('marathoner');
+    if(game.winTop3Count>=3 && !medals.includes('invincible')) medals.push('invincible');
+    game.medals = medals;
+    Object.keys(achievements).forEach(a => { if(!medals.includes(a) && achievements[a]) medals.push(a); });
+    game.medals = medals;
+    localStorage.setItem('gameData', JSON.stringify({level:game.level, elo:game.elo, totalCorrect:game.totalCorrect, highestLevel:game.highestLevel, cups:game.cups, medals:game.medals, mathCorrect:game.mathCorrect, winTop3Count:game.winTop3Count}));
+}
+
+function renderFull() {
+    const root = document.getElementById('appRoot');
+    if(!root) return;
+    if(currentScreen === 'game') {
+        let q = game.currentQ;
+        let botsDisplay = botsList.slice(0,6).map(b => `<div class="lb-row"><span>🐐 ${b.name}</span><span>Ур.${b.level} 🔹 ${Math.floor(b.elo)}</span></div>`).join('');
+        let musicIcon = musicEnabled ? "🎵" : "🔇";
+        let soundIcon = soundEnabled ? "🔊" : "🔇";
+        let heartsDisplay = '';
+        for (let i = 0; i < lives; i++) heartsDisplay += '❤️ ';
+        for (let i = lives; i < 9; i++) heartsDisplay += '🖤 ';
+        let adButton = '';
+        if (lives <= 0) {
+            adButton = `<button class="ad-btn" id="watchAdBtn">📺 Смотреть рекламу (+3 жизни)</button>`;
+            let remaining = getTimeToNextLife();
+            if (remaining && remaining > 0) { let minutes = Math.floor(remaining / 60000); let seconds = Math.floor((remaining % 60000) / 1000); adButton += `<div class="waiting-message">⏳ Следующая жизнь через: ${minutes}:${seconds < 10 ? '0'+seconds : seconds}</div>`; }
+        }
+        let html = `<div class="game-card">
+            <div class="top-bar">
+                <div>⭐ Ур.${game.level}</div>
+                <div class="rank-badge">${getRankTitle(game.level)}</div>
+                <div>🏆 ${Math.floor(game.elo)}</div>
+                <div class="lives-container">${heartsDisplay}</div>
+                <button class="difficulty-btn ${difficulty==='easy'?'difficulty-active':''}" data-diff="easy">🐣 Лёгкий</button>
+                <button class="difficulty-btn ${difficulty==='medium'?'difficulty-active':''}" data-diff="medium">⚡ Средний</button>
+                <button class="difficulty-btn ${difficulty==='hard'?'difficulty-active':''}" data-diff="hard">🔥 Сложный</button>
+                <button class="badge" id="nicknameBtn">✏️ ${playerNickname}</button>
+                <button class="badge" id="musicBtn">${musicIcon}</button>
+                <button class="badge" id="soundBtn">${soundIcon}</button>
+            </div>
+            <div class="game-panel">
+                <div style="text-align:center"><div style="font-size:3rem">${pets[selectedPet].emoji}</div><div style="font-size:1rem; color:#ffcc66">${pets[selectedPet].name}</div></div>
+                <div class="quiz-card">
+                    <div class="question">${q?.text || "Загрузка"}</div>
+                    <div class="answer-zone">
+                        <input type="number" id="mathInput" class="answer-input" placeholder="Ответ" value="" ${lives<=0 ? 'disabled' : ''}>
+                    </div>
+                    ${lives > 0 ? `<button class="submit-btn" id="submitAnsBtn">Проверить ✓</button>` : ''}
+                    ${adButton}
+                </div>
+                <div class="lb-mini">
+                    <div class="lb-row lb-player"><span>🏅 ${playerNickname}</span><span>Ур.${game.level} ▫ ${Math.floor(game.elo)}</span></div>
+                    ${botsDisplay}
+                </div>
+            </div>
+            <div class="menu-row">
+                <button class="menu-btn" id="profileBtn">👤 ПРОФИЛЬ</button>
+                <button class="menu-btn" id="petBtn">🐾 ПЕРСОНАЖ</button>
+                <button class="menu-btn" id="questBtn">📋 ЗАДАНИЯ</button>
+                <button class="menu-btn" id="statsBtn">📊 СТАТИСТИКА</button>
+            </div>
+        </div>`;
+        root.innerHTML = html;
+        
+        const inputField = document.getElementById('mathInput');
+        const submitBtn = document.getElementById('submitAnsBtn');
+        const watchAdBtn = document.getElementById('watchAdBtn');
+        
+        if (inputField && lives > 0) {
+            inputField.focus();
+        }
+        if (submitBtn) submitBtn.addEventListener('click', () => { if (inputField && !pendingAnswer && lives > 0) handleAnswer(inputField.value); });
+        if (watchAdBtn) watchAdBtn.addEventListener('click', () => { showRewardedAd(); });
+        if (inputField && lives > 0) inputField.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !pendingAnswer) { e.preventDefault(); handleAnswer(inputField.value); } });
+        
+        document.querySelectorAll('.difficulty-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ difficulty = btn.dataset.diff; localStorage.setItem('gameDifficulty', difficulty); renderFull(); }); });
+        document.getElementById('nicknameBtn')?.addEventListener('click', showNicknameModal);
+        document.getElementById('musicBtn')?.addEventListener('click', toggleMusic);
+        document.getElementById('soundBtn')?.addEventListener('click',()=>{ soundEnabled = !soundEnabled; localStorage.setItem('soundEnabled', soundEnabled); renderFull(); });
+        document.getElementById('profileBtn')?.addEventListener('click',()=>{ currentScreen='profile'; renderFull(); });
+        document.getElementById('petBtn')?.addEventListener('click',()=>{ currentScreen='shop'; renderFull(); });
+        document.getElementById('questBtn')?.addEventListener('click',()=>{ currentScreen='quests'; renderFull(); });
+        document.getElementById('statsBtn')?.addEventListener('click',()=>{ currentScreen='stats'; renderFull(); });
+    } else if(currentScreen === 'profile') {
+        let medalsList = game.medals.map(m => achievementsList[m]?.name || m).join(', ');
+        let cupsLine = game.cups.map(c=> ({bronze:"🥉",silver:"🥈",gold:"🥇",platinum:"💎",royal:"👑",legendary:"🌟"}[c] || '🏆')).join(' ');
+        let html = `<div class="game-card"><div class="top-bar"><div>👤 ПРОФИЛЬ</div><button class="badge" id="backBtn">◀ НАЗАД</button><button class="badge" id="nicknameProfileBtn">✏️ Сменить ник</button></div>
+        <div class="profile-screen"><div style="text-align:center;font-size:3rem;">${pets[selectedPet].emoji}</div>
+        <h2 style="color:#ffcc66">${playerNickname}</h2>
+        <p>⭐ Уровень: ${game.level} | 🧠 Рейтинг: ${Math.floor(game.elo)}</p>
+        <p>✅ Всего верных: ${game.totalCorrect} | ➕ Математика: ${game.mathCorrect}</p>
+        <p>🏆 Кубки: ${cupsLine || "Нет"} | 🏅 Достижения: ${medalsList || "—"}</p>
+        <p>❤️ Жизни: ${lives}/9</p></div></div>`;
+        root.innerHTML = html;
+        document.getElementById('backBtn')?.addEventListener('click',()=>{ currentScreen='game'; renderFull(); });
+        document.getElementById('nicknameProfileBtn')?.addEventListener('click', showNicknameModal);
+    } else if(currentScreen === 'shop') {
+        let owned = JSON.parse(localStorage.getItem('ownedPets')) || ['cat'];
+        let html = `<div class="game-card"><div class="top-bar"><div>🐾 МАГАЗИН</div><button class="badge" id="backBtn">◀ НАЗАД</button></div><div class="shop-screen"><h3>Ваши кубки: ${game.cups.length}</h3>`;
+        for(let [id, pet] of Object.entries(pets)) { let ownedFlag = owned.includes(id); html += `<div class="character-option" data-pet="${id}" style="${selectedPet===id?'border:2px solid gold;':''}background:#2a4a3a">${pet.emoji} ${pet.name} ${ownedFlag?'✅':`🏆${pet.price}`}</div>`; }
+        html += `</div></div>`;
+        root.innerHTML = html;
+        document.querySelectorAll('.character-option').forEach(el=>{ el.addEventListener('click',()=>{ let petId = el.dataset.pet; let owned = JSON.parse(localStorage.getItem('ownedPets')) || ['cat']; if(owned.includes(petId) || pets[petId].price===0 || game.cups.length >= pets[petId].price) { if(!owned.includes(petId) && pets[petId].price>0) { game.cups = game.cups.filter((_,i)=>i>=pets[petId].price); owned.push(petId); localStorage.setItem('ownedPets', JSON.stringify(owned)); updateCupsAndMedals(); showNotification(`Вы купили ${pets[petId].name}!`, "🎁", "center", 2000); } selectedPet = petId; localStorage.setItem('selectedPet', selectedPet); renderFull(); } else showNotification(`Недостаточно кубков! Нужно ${pets[petId].price}`, "💎", "bottom", 1500); }); });
+        document.getElementById('backBtn')?.addEventListener('click',()=>{ currentScreen='game'; renderFull(); });
+    } else if(currentScreen === 'quests') {
+        checkDailyReset();
+        let html = `<div class="game-card"><div class="top-bar"><div>📋 ЗАДАНИЯ</div><button class="badge" id="backBtn">◀ НАЗАД</button></div><div class="stats-screen"><h3>Ежедневные задания</h3>`;
+        for(let q of dailyQuests.quests) { html += `<div class="quest-item">${q.text}<br>${q.current}/${q.target} ${q.completed?'✅':'⏳'} +${q.reward}⭐</div>`; }
+        html += `<h3>Достижения</h3>`;
+        for(let [id, ach] of Object.entries(achievementsList)) { html += `<div class="achievement-item">${ach.name} ${achievements[id]?'✅':'❌'}<br><small>${ach.desc}</small></div>`; }
+        html += `</div></div>`;
+        root.innerHTML = html;
+        document.getElementById('backBtn')?.addEventListener('click',()=>{ currentScreen='game'; renderFull(); });
+    } else if(currentScreen === 'stats') {
+        let stats = JSON.parse(localStorage.getItem('statsHistory')) || [];
+        stats.push({date:new Date().toDateString(), level:game.level, elo:game.elo, correct:game.totalCorrect});
+        if(stats.length>10) stats.shift();
+        localStorage.setItem('statsHistory',JSON.stringify(stats));
+        let html = `<div class="game-card"><div class="top-bar"><div>📊 СТАТИСТИКА</div><button class="badge" id="backBtn">◀ НАЗАД</button></div><div class="stats-screen"><h3>Прогресс</h3><ul>`;
+        for(let s of stats.slice(-7)) html += `<li>${s.date}: Ур.${s.level}, Рейтинг:${s.elo}, Ответов:${s.correct}</li>`;
+        html += `</ul><h3>Текущий уровень сложности: ${difficulty==='easy'?'Лёгкий':difficulty==='medium'?'Средний':'Сложный'}</h3><h3>Адаптивный множитель: ${adaptiveMultiplier.toFixed(2)}x</h3></div></div>`;
+        root.innerHTML = html;
+        document.getElementById('backBtn')?.addEventListener('click',()=>{ currentScreen='game'; renderFull(); });
+    }
+    if (lives < 9) { const remaining = getTimeToNextLife(); if (remaining === 0) { restoreLivesOverTime(); renderFull(); } }
+}
+
+function startBotUpdateInterval() { if (botUpdateInterval) clearInterval(botUpdateInterval); botUpdateInterval = setInterval(() => { if (currentScreen === 'game') updateBotsScores(); }, 5000); }
+function stopBotUpdateInterval() { if (botUpdateInterval) clearInterval(botUpdateInterval); }
+function startLifeRestoreChecker() { if (lifeRestoreInterval) clearInterval(lifeRestoreInterval); lifeRestoreInterval = setInterval(() => { restoreLivesOverTime(); if (currentScreen === 'game') renderFull(); }, 60000); }
+
+function loadGame() {
+    try { const saved = localStorage.getItem('gameData'); if(saved) { let d = JSON.parse(saved); for(let k in d) if(game.hasOwnProperty(k)) game[k] = d[k]; } const savedLives = localStorage.getItem('lives'); if (savedLives !== null) lives = parseInt(savedLives); const savedNextLife = localStorage.getItem('nextLifeTime'); if (savedNextLife !== 'null' && savedNextLife !== null) nextLifeTime = parseInt(savedNextLife); restoreLivesOverTime(); } catch(e) {}
+    game.currentQ = generateMathQuestion();
+    botsList = initBots(); refreshBotNames();
+    updateCupsAndMedals();
+    initMusic(); startMusicOnFirstTouch(); startCheerInterval(); startBotUpdateInterval(); startLifeRestoreChecker();
+    renderFull();
+    window.addEventListener('beforeunload', () => { stopCheerInterval(); stopBotUpdateInterval(); if (lifeRestoreInterval) clearInterval(lifeRestoreInterval); let toSave = {level:game.level, elo:game.elo, totalCorrect:game.totalCorrect, highestLevel:game.highestLevel, cups:game.cups, medals:game.medals, mathCorrect:game.mathCorrect, winTop3Count:game.winTop3Count}; localStorage.setItem('gameData', JSON.stringify(toSave)); });
+}
+loadGame();
+</script>
+<script>
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            window.scrollTo(0, 1);
+        }, 0);
+    });
+</script>
+</body>
+</html>
