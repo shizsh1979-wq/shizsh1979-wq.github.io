@@ -174,3 +174,11 @@ yeahmobi.com, 113772, RESELLER
 zmaticoo.com, 114490, RESELLER
 zmaticoo.com, 30751512, DIRECT
 ads.vk.com, 30751512, DIRECT
+google.com, pub-5533854580432370, RESELLER, f08c47fec0942fa0
+improvedigital.com, 2031, RESELLER
+uis.mobfox.com, 165, RESELLER
+hyperad.tech, 215, RESELLER
+yandex.com, 325170103, DIRECT
+betweendigital.com, 43554, RESELLER
+Contextweb.com, 562899, RESELLER, 89ff185a4c4e857c
+hyperad.tech, 150, RESELLER
