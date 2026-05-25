@@ -7,7 +7,7 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://yandex.ru/ads/system/adsdk.js" async></script>
     <style>
-        /* ===== СТИЛИ (ОСТАЛИСЬ БЕЗ ИЗМЕНЕНИЙ) ===== */
+        /* ===== СТИЛИ ===== */
         * {
             margin: 0;
             padding: 0;
@@ -383,13 +383,12 @@
 <div id="appRoot"></div>
 <div class="copyright">© Дмитрий Хайбулин | <a href="mailto:kayfull.in@yandex.ru">kayfull.in@yandex.ru</a></div>
 <script>
-// ===== ПЕРЕМЕННЫЕ ДЛЯ ПРЕДЗАГРУЗКИ РЕКЛАМЫ =====
-let preloadedRewardedAd = null;      // Храним предзагруженную рекламу
-let isLoadingRewardedAd = false;     // Флаг, чтобы не загружать несколько раз одновременно
+// ===================== ПЕРЕМЕННЫЕ ДЛЯ ПРЕДЗАГРУЗКИ РЕКЛАМЫ =====================
+let preloadedRewardedAd = null;
+let isLoadingRewardedAd = false;
 
-// ===== ФУНКЦИЯ ПРЕДЗАГРУЗКИ РЕКЛАМЫ (вызывается автоматически) =====
+// ===== ФУНКЦИЯ ПРЕДЗАГРУЗКИ РЕКЛАМЫ =====
 function preloadRewardedAd() {
-    // Если реклама уже загружена или грузится — ничего не делаем
     if (preloadedRewardedAd || isLoadingRewardedAd) return;
     
     if (typeof Ya === 'undefined' || !Ya.RewardedAd) {
@@ -400,81 +399,127 @@ function preloadRewardedAd() {
     isLoadingRewardedAd = true;
     console.log('📡 Начинаем предзагрузку рекламы...');
     
-    const ad = new Ya.RewardedAd('R-M-19285274-1');
-    
-    ad.on('load', () => {
-        console.log('✅ Реклама предзагружена!');
-        preloadedRewardedAd = ad;
-        isLoadingRewardedAd = false;
-    });
-    
-    ad.on('error', (error) => {
-        console.error('❌ Ошибка предзагрузки рекламы:', error);
+    try {
+        const ad = new Ya.RewardedAd('R-M-19285274-1');
+        
+        ad.onLoad = () => {
+            console.log('✅ Реклама предзагружена и готова к показу');
+            preloadedRewardedAd = ad;
+            isLoadingRewardedAd = false;
+        };
+        
+        ad.onError = (error) => {
+            console.error('❌ Ошибка предзагрузки рекламы:', error);
+            isLoadingRewardedAd = false;
+            preloadedRewardedAd = null;
+            setTimeout(() => { preloadRewardedAd(); }, 30000);
+        };
+        
+        ad.load();
+    } catch(e) {
+        console.error('Ошибка создания рекламы:', e);
         isLoadingRewardedAd = false;
         preloadedRewardedAd = null;
-        // Если не загрузилось — пробуем снова через 30 секунд
-        setTimeout(() => { preloadRewardedAd(); }, 30000);
-    });
-    
-    ad.load();
-}
-
-// ===== ФУНКЦИЯ ПОКАЗА РЕКЛАМЫ (ИСПРАВЛЕНА) =====
-function showRewardedAd() {
-    // Если есть предзагруженная реклама — показываем её мгновенно
-    if (preloadedRewardedAd) {
-        const ad = preloadedRewardedAd;
-        preloadedRewardedAd = null; // Очищаем, чтобы не показать дважды
-        
-        ad.on('rewarded', () => {
-            addLives(3);
-            showNotification('🎉 +3 жизни! Спасибо за просмотр!', '🎁', 'center', 2500);
-            renderFull();
-            // После показа — предзагружаем новую рекламу
-            preloadRewardedAd();
-        });
-        
-        ad.on('close', () => {
-            console.log('Реклама закрыта');
-            renderFull();
-        });
-        
-        ad.on('error', (error) => {
-            console.error('Ошибка показа рекламы:', error);
-            showNotification('❌ Реклама не загрузилась. Попробуйте позже.', '⚠️', 'center', 2000);
-            renderFull();
-            // Пробуем предзагрузить заново
-            preloadRewardedAd();
-        });
-        
-        ad.show();
-    } 
-    // Если предзагруженной рекламы нет — показываем старым способом с задержкой
-    else if (typeof Ya !== 'undefined' && Ya.showRewardedAd) {
-        console.log('⚠️ Предзагруженной рекламы нет, загружаем сейчас...');
-        Ya.showRewardedAd({
-            blockId: 'R-M-19285274-1',
-            onRewarded: () => {
-                addLives(3);
-                showNotification('🎉 +3 жизни! Спасибо за просмотр!', '🎁', 'center', 2500);
-                renderFull();
-            },
-            onError: (error) => {
-                console.error('Ошибка рекламы:', error);
-                showNotification('❌ Реклама не загрузилась. Попробуйте позже.', '⚠️', 'center', 2000);
-                renderFull();
-            }
-        });
-    } else {
-        showNotification('⚠️ Реклама временно недоступна', '⚠️', 'center', 2000);
     }
 }
 
-// ===== АВТОРСКИЕ ПРАВА И ПРОЧАЯ ЛОГИКА (БЕЗ ИЗМЕНЕНИЙ) =====
+// ===== ФУНКЦИЯ ПОКАЗА РЕКЛАМЫ (БЕСШОВНАЯ ВЫДАЧА) =====
+function showRewardedAd() {
+    console.log('🎬 Попытка показа рекламы, предзагружена:', !!preloadedRewardedAd);
+    
+    if (preloadedRewardedAd) {
+        const ad = preloadedRewardedAd;
+        preloadedRewardedAd = null;
+        
+        ad.onRewarded = () => {
+            console.log('🎁 Награда получена за просмотр');
+            addLives(3);
+            showNotification('🎉 +3 жизни! Спасибо за просмотр!', '🎁', 'center', 2500);
+            renderFull();
+            preloadRewardedAd();
+        };
+        
+        ad.onClose = () => {
+            console.log('📺 Реклама закрыта');
+            renderFull();
+            preloadRewardedAd();
+        };
+        
+        ad.onError = (error) => {
+            console.error('❌ Ошибка показа рекламы:', error);
+            addLives(3);
+            showNotification('🎁 +3 жизни (реклама временно недоступна)', '🎁', 'center', 2500);
+            renderFull();
+            preloadRewardedAd();
+        };
+        
+        try {
+            ad.show();
+        } catch(e) {
+            console.error('Ошибка при вызове show():', e);
+            addLives(3);
+            showNotification('🎁 +3 жизни (реклама временно недоступна)', '🎁', 'center', 2500);
+            renderFull();
+            preloadRewardedAd();
+        }
+    } 
+    else if (typeof Ya !== 'undefined' && Ya.RewardedAd) {
+        console.log('⚠️ Предзагруженной рекламы нет, загружаем сейчас...');
+        isLoadingRewardedAd = true;
+        
+        try {
+            const ad = new Ya.RewardedAd('R-M-19285274-1');
+            
+            ad.onLoad = () => {
+                console.log('✅ Реклама загружена, показываем');
+                ad.show();
+            };
+            
+            ad.onRewarded = () => {
+                addLives(3);
+                showNotification('🎉 +3 жизни! Спасибо за просмотр!', '🎁', 'center', 2500);
+                renderFull();
+            };
+            
+            ad.onError = (error) => {
+                console.error('❌ Ошибка загрузки рекламы:', error);
+                isLoadingRewardedAd = false;
+                addLives(3);
+                showNotification('🎁 +3 жизни (реклама временно недоступна)', '🎁', 'center', 2500);
+                renderFull();
+            };
+            
+            ad.onClose = () => {
+                console.log('Реклама закрыта');
+                isLoadingRewardedAd = false;
+                renderFull();
+                preloadRewardedAd();
+            };
+            
+            ad.load();
+        } catch(e) {
+            console.error('Ошибка создания рекламы:', e);
+            isLoadingRewardedAd = false;
+            addLives(3);
+            showNotification('🎁 +3 жизни (реклама временно недоступна)', '🎁', 'center', 2500);
+            renderFull();
+        }
+    } 
+    else {
+        console.log('⚠️ Яндекс Реклама недоступна, выдаём жизни без рекламы');
+        addLives(3);
+        showNotification('🎁 +3 жизни (реклама временно недоступна)', '🎁', 'center', 2500);
+        renderFull();
+    }
+}
+
+// ===== АВТОРСКИЕ ПРАВА И ПРОЧАЯ ЛОГИКА =====
 window.addEventListener('load', function() {
     setTimeout(function() { window.scrollTo(0, 1); }, 0);
-    // ЗАПУСКАЕМ ПРЕДЗАГРУЗКУ РЕКЛАМЫ ПРИ СТАРТЕ ИГРЫ
-    setTimeout(() => { preloadRewardedAd(); }, 2000);
+    setTimeout(() => { 
+        if (lives <= 2) preloadRewardedAd(); 
+        else console.log('Жизней много, предзагрузка рекламы позже');
+    }, 2000);
 });
 
 console.log("%c© MathMasters | Автор: Дмитрий Хайбулин", "color:#3a9bc0;font-size:14px;font-weight:bold");
@@ -619,16 +664,33 @@ function restoreLivesOverTime() {
     updateLivesDisplay();
 }
 
+// ===== ОСНОВНАЯ ФУНКЦИЯ ПОТЕРИ ЖИЗНИ (ИСПРАВЛЕНА) =====
 function loseLife() {
     if (lives > 0) {
         lives--;
+        
+        // МГНОВЕННОЕ ОБНОВЛЕНИЕ ОТОБРАЖЕНИЯ ЖИЗНЕЙ
+        updateLivesDisplay();
+        
         if (lives === 0) {
             nextLifeTime = Date.now() + 3600000;
             localStorage.setItem('nextLifeTime', nextLifeTime);
             showNotification("❤️ Жизни закончились! Смотри рекламу или жди восстановления", "⚠️", "center", 3000);
+            
+            // КЛЮЧЕВОЕ: МГНОВЕННО ОБНОВЛЯЕМ ИНТЕРФЕЙС, ЧТОБЫ КНОПКА ПОЯВИЛАСЬ
+            if (currentScreen === 'game') {
+                renderFull();
+            }
         }
+        
         localStorage.setItem('lives', lives);
-        updateLivesDisplay();
+        
+        // Предзагрузка рекламы при 2 жизнях или меньше (но не при 0)
+        if (lives <= 2 && lives > 0) {
+            console.log(`🔄 Жизней осталось: ${lives}, начинаем предзагрузку рекламы`);
+            preloadRewardedAd();
+        }
+        
         return true;
     }
     return false;
